@@ -8,6 +8,8 @@ export { OptionRow } from './OptionRow';
 export type { OptionRowMode, OptionRowProps } from './OptionRow';
 export { ProgressTrack } from './ProgressTrack';
 export type { ProgressTrackProps } from './ProgressTrack';
+export { Sparkline } from './Sparkline';
+export type { SparklineProps } from './Sparkline';
 export { StickyDock } from './StickyDock';
 export type { StickyDockProps } from './StickyDock';
 export { Text } from './Text';
