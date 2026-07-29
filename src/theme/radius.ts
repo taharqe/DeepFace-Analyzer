@@ -40,4 +40,22 @@ export const radius = {
  */
 export const OPTION_ROW_HEIGHT = Math.round(px(120) / 4) * 4;
 
+/**
+ * [E] 24pt check/tick indicator.
+ *
+ * No capture resolves this mark's size. It was previously hardcoded as a bare
+ * 24x24 in three separate components with no marker, which read as measured.
+ * It is a proposal: six 4pt steps, large enough to carry a glyph inside a
+ * capsule without crowding the row's 24pt horizontal padding.
+ */
+export const CHECK_SIZE = 24;
+
+/**
+ * [E] 44pt minimum touch target.
+ *
+ * Not from the corpus - this is the platform floor (Apple HIG and WCAG 2.5.5
+ * both land on 44). The dock items measured 40pt tall before this existed.
+ */
+export const MIN_TOUCH_TARGET = 44;
+
 export type RadiusToken = keyof typeof radius;

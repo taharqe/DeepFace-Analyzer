@@ -1,0 +1,17 @@
+{
+  "$comment": "Single source of truth for every colour in the system. src/theme/color.ts imports this, and scripts/verify-contrast.mjs reads this same file. Neither holds a copy. Changing a value here changes both the app and the guard that checks it - which is the entire point: an earlier version of the guard held its own literals, so reverting fgSecondary to the failing #838383 passed the check while shipping 3.79:1 body text.",
+  "canvas": "#F6F5F3",
+  "surface": "#FFFFFF",
+  "assistant": "#F9F4F8",
+  "actionPrimary": "#5363FF",
+  "actionSelection": "#FF88BB",
+  "scoreHigh": "#B16BFF",
+  "scoreMid": "#40BB7C",
+  "accentCommerce": "#F8D94B",
+  "fgPrimary": "#0B0B0A",
+  "fgSecondary": "#6B6864",
+  "voidStart": "#030B0E",
+  "voidEnd": "#0B1C2C",
+  "successStart": "#019A88",
+  "successEnd": "#00B1D3"
+}

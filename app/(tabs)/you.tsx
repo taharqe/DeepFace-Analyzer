@@ -2,13 +2,21 @@ import { router } from 'expo-router';
 import { ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Badge, Button, Card, Text } from '../../src/components';
+import {
+  Badge,
+  Button,
+  Card,
+  Text,
+  useStickyDockHeight,
+} from '../../src/components';
 import { CONCERNS } from '../../src/features/onboarding/questions';
 import { useOnboarding } from '../../src/features/onboarding/state';
 import { useTheme } from '../../src/theme';
+import { TAB_ITEM_HEIGHT } from './_layout';
 
 export default function You() {
   const t = useTheme();
+  const dockClearance = useStickyDockHeight(TAB_ITEM_HEIGHT, 8);
   const insets = useSafeAreaInsets();
   const { state, dispatch } = useOnboarding();
 
@@ -20,7 +28,7 @@ export default function You() {
         contentContainerStyle={{
           paddingTop: insets.top + t.spacing.xl,
           paddingHorizontal: t.spacing.lg,
-          paddingBottom: 140,
+          paddingBottom: dockClearance + t.spacing.xl,
           gap: t.spacing.md,
         }}
       >
@@ -71,6 +79,9 @@ export default function You() {
           variant="secondary"
           onPress={() => {
             dispatch({ type: 'reset' });
+            // Same stack leak as the paywall, in reverse: without dismissAll
+            // the four onboarding entries survive underneath Welcome.
+            router.dismissAll();
             router.replace('/');
           }}
         />

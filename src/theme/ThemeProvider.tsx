@@ -1,8 +1,16 @@
 import { createContext, useContext, useMemo, type ReactNode } from 'react';
 
-import { onFill, palette, successGradient, text, voidGradient } from './color';
+import {
+  disabled,
+  onFill,
+  onVoid,
+  palette,
+  successGradient,
+  text,
+  voidGradient,
+} from './color';
 import { shadow, scrim } from './elevation';
-import { OPTION_ROW_HEIGHT, radius } from './radius';
+import { CHECK_SIZE, MIN_TOUCH_TARGET, OPTION_ROW_HEIGHT, radius } from './radius';
 import { PX_PER_PT } from './scale';
 import { spacing } from './spacing';
 import { fontFamily, typography } from './typography';
@@ -22,14 +30,19 @@ import { fontFamily, typography } from './typography';
  *     mechanical inversion.
  */
 export const theme = {
-  color: { palette, onFill, text, voidGradient, successGradient },
+  color: { palette, onFill, onVoid, text, disabled, voidGradient, successGradient },
   typography,
   fontFamily,
   spacing,
   radius,
   shadow,
   scrim,
-  metrics: { pxPerPt: PX_PER_PT, optionRowHeight: OPTION_ROW_HEIGHT },
+  metrics: {
+    pxPerPt: PX_PER_PT,
+    optionRowHeight: OPTION_ROW_HEIGHT,
+    checkSize: CHECK_SIZE,
+    minTouchTarget: MIN_TOUCH_TARGET,
+  },
 } as const;
 
 export type Theme = typeof theme;

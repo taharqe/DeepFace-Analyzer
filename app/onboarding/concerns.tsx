@@ -3,11 +3,13 @@ import { ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import {
+  BUTTON_HEIGHT,
   Button,
   OptionRow,
   ProgressTrack,
   StickyDock,
   Text,
+  useStickyDockHeight,
 } from '../../src/components';
 import { CONCERNS, COPY } from '../../src/features/onboarding/questions';
 import { useOnboarding } from '../../src/features/onboarding/state';
@@ -25,6 +27,7 @@ export default function ConcernsStep() {
   const t = useTheme();
   const insets = useSafeAreaInsets();
   const { state, dispatch } = useOnboarding();
+  const dockClearance = useStickyDockHeight(BUTTON_HEIGHT);
 
   const ready = state.concerns.length > 0;
 
@@ -34,8 +37,9 @@ export default function ConcernsStep() {
         contentContainerStyle={{
           paddingTop: insets.top + t.spacing.xl,
           paddingHorizontal: t.spacing.lg,
-          // Clears the dock: CTA 56 + dock padding 32 + inset + breathing room.
-          paddingBottom: 160,
+          // Measured off the dock itself rather than guessed - the old 160
+          // ignored the safe-area inset entirely.
+          paddingBottom: dockClearance + t.spacing.xl,
           gap: t.spacing.md,
         }}
       >

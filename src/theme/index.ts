@@ -1,8 +1,18 @@
-export { onFill, palette, successGradient, text, voidGradient } from './color';
+export {
+  DISABLED_FILL_ALPHA,
+  disabled,
+  mixHex,
+  onFill,
+  onVoid,
+  palette,
+  successGradient,
+  text,
+  voidGradient,
+} from './color';
 export type { OnFillToken, PaletteToken, TextToken } from './color';
 export { SHADOW_SOURCE, scrim, shadow } from './elevation';
 export type { ScrimToken } from './elevation';
-export { OPTION_ROW_HEIGHT, radius } from './radius';
+export { CHECK_SIZE, MIN_TOUCH_TARGET, OPTION_ROW_HEIGHT, radius } from './radius';
 export type { RadiusToken } from './radius';
 export { LOGICAL_FRAME, PX_PER_PT, SOURCE_FRAME, px } from './scale';
 export { spacing } from './spacing';

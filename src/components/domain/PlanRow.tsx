@@ -1,7 +1,7 @@
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet } from 'react-native';
 
 import { useTheme } from '../../theme';
-import { Text } from '../primitives';
+import { CheckMark, PRESS_OPACITY, Text } from '../primitives';
 
 /**
  * A row in "First steps" / "Daily plan" on the Today tab.
@@ -30,27 +30,36 @@ export function PlanRow({
 }: PlanRowProps) {
   const t = useTheme();
 
+  // A row with nothing to do is not a button. Announcing "Meet your scanner,
+  // button" and then doing nothing on activation is worse than announcing text.
+  const actionable = !locked && !!onPress;
+
   return (
     <Pressable
-      onPress={locked ? undefined : onPress}
-      disabled={locked}
-      accessibilityRole="button"
-      accessibilityState={{ disabled: locked }}
+      onPress={actionable ? onPress : undefined}
+      disabled={!actionable}
+      accessibilityRole={actionable ? 'button' : undefined}
+      accessibilityState={actionable ? undefined : { disabled: locked }}
       accessibilityLabel={locked ? `${label}, locked` : label}
       style={({ pressed }) => [
         styles.row,
         {
           minHeight: t.metrics.optionRowHeight,
+          paddingVertical: t.spacing.lg,
           borderRadius: t.radius.capsule,
           backgroundColor: t.color.palette.surface,
           paddingHorizontal: t.spacing.xl,
           gap: t.spacing.md,
-          opacity: pressed && !locked ? 0.92 : 1,
+          opacity: pressed && actionable ? PRESS_OPACITY : 1,
         },
         t.shadow.card,
       ]}
     >
-      <Text variant="title.sm" accessibilityElementsHidden>
+      <Text
+        variant="title.sm"
+        accessibilityElementsHidden
+        importantForAccessibility="no-hide-descendants"
+      >
         {locked ? '🔒' : (glyph ?? '·')}
       </Text>
 
@@ -63,21 +72,7 @@ export function PlanRow({
         {label}
       </Text>
 
-      {done ? (
-        <View
-          style={[
-            styles.check,
-            {
-              backgroundColor: t.color.palette.actionSelection,
-              borderRadius: t.radius.capsule,
-            },
-          ]}
-        >
-          <Text variant="label.md" tone="primary">
-            ✓
-          </Text>
-        </View>
-      ) : null}
+      {done ? <CheckMark /> : null}
     </Pressable>
   );
 }
@@ -85,10 +80,4 @@ export function PlanRow({
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center' },
   label: { flex: 1 },
-  check: {
-    width: 24,
-    height: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
 });

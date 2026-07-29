@@ -1,4 +1,5 @@
 import { LinearGradient } from 'expo-linear-gradient';
+import { StatusBar } from 'expo-status-bar';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -7,8 +8,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button, ProgressTrack, Text } from '../../src/components';
 import { CATALOGUE_SIZE } from '../../src/features/catalogue/data';
 import { COPY } from '../../src/features/onboarding/questions';
-import { formatCount } from '../../src/lib/format';
-import { useTheme, voidGradient } from '../../src/theme';
+import { rawCount } from '../../src/lib/format';
+import { onVoid, useTheme, voidGradient } from '../../src/theme';
 
 /**
  * The analysis sequence.
@@ -58,7 +59,7 @@ export default function Tailoring() {
         </Text>
 
         <Text variant="display.lg" tone="inverse" style={styles.count}>
-          {formatCount(Math.round(CATALOGUE_SIZE * progress))}
+          {rawCount(CATALOGUE_SIZE * progress)}
         </Text>
         <Text variant="body.md" tone="inverse" style={styles.centred}>
           {COPY.tailoring.caption}
@@ -66,18 +67,23 @@ export default function Tailoring() {
 
         <ProgressTrack
           value={progress}
-          // The canvas track would vanish on the void ramp; a translucent
-          // white reads correctly against both ends of the gradient.
-          trackColor="rgba(255,255,255,0.16)"
+          // [E] marked token, not a literal. See color.ts onVoid.track - the
+          // canvas token vanishes against the ramp, and this value is a
+          // proposal rather than a measurement.
+          trackColor={onVoid.track}
           style={{ width: '100%', marginTop: t.spacing.xl }}
           accessibilityLabel="Tailoring your routine"
         />
       </View>
 
+      {/* The root layout sets style="dark", which is invisible on the void
+          ramp. Each void screen overrides it locally. */}
+      <StatusBar style="light" />
+
       <Button
         label={COPY.tailoring.cta}
         disabled={!done}
-        onPress={() => router.push('/onboarding/paywall')}
+        onPress={() => router.push('/onboarding/reveal')}
       />
     </LinearGradient>
   );

@@ -1,7 +1,7 @@
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { useTheme } from '../../theme';
-import { Badge, Text } from '../primitives';
+import { Badge, CheckMark, PRESS_OPACITY, Text } from '../primitives';
 
 /**
  * A plan row on the paywall: "Weekly €5,99" / "Yearly BEST VALUE €39,99".
@@ -50,12 +50,12 @@ export function PriceOption({
           paddingHorizontal: t.spacing.xl,
           paddingVertical: t.spacing.md,
           gap: t.spacing.md,
-          opacity: pressed ? 0.92 : 1,
+          opacity: pressed ? PRESS_OPACITY : 1,
         },
         t.shadow.card,
       ]}
     >
-      <View style={styles.grow}>
+      <View style={[styles.grow, { gap: t.spacing.half }]}>
         <View style={[styles.titleRow, { gap: t.spacing.sm }]}>
           <Text variant="title.sm">{title}</Text>
           {flag ? <Badge label={flag} tone="commerce" /> : null}
@@ -66,35 +66,13 @@ export function PriceOption({
         </Text>
       </View>
 
-      <View
-        style={[
-          styles.check,
-          {
-            borderRadius: t.radius.capsule,
-            backgroundColor: selected
-              ? t.color.palette.actionSelection
-              : t.color.palette.canvas,
-          },
-        ]}
-      >
-        {selected ? (
-          <Text variant="label.md" tone="primary">
-            ✓
-          </Text>
-        ) : null}
-      </View>
+      <CheckMark empty={!selected} />
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center' },
-  grow: { flex: 1, gap: 2 },
+  grow: { flex: 1 },
   titleRow: { flexDirection: 'row', alignItems: 'center' },
-  check: {
-    width: 24,
-    height: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
 });

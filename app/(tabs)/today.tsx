@@ -1,9 +1,16 @@
+import { router } from 'expo-router';
 import { ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { AssistantBubble, PlanRow, Text } from '../../src/components';
+import {
+  AssistantBubble,
+  PlanRow,
+  Text,
+  useStickyDockHeight,
+} from '../../src/components';
 import { useOnboarding } from '../../src/features/onboarding/state';
 import { useTheme } from '../../src/theme';
+import { TAB_ITEM_HEIGHT } from './_layout';
 
 /**
  * Today.
@@ -13,6 +20,7 @@ import { useTheme } from '../../src/theme';
  */
 export default function Today() {
   const t = useTheme();
+  const dockClearance = useStickyDockHeight(TAB_ITEM_HEIGHT, 8);
   const insets = useSafeAreaInsets();
   const { state } = useOnboarding();
 
@@ -22,7 +30,7 @@ export default function Today() {
         contentContainerStyle={{
           paddingTop: insets.top + t.spacing.xl,
           paddingHorizontal: t.spacing.lg,
-          paddingBottom: 140,
+          paddingBottom: dockClearance + t.spacing.xl,
           gap: t.spacing.lg,
         }}
       >
@@ -36,7 +44,13 @@ export default function Today() {
 
         <View style={{ gap: t.spacing.md }}>
           <Text variant="title.md">First steps</Text>
-          <PlanRow label="Meet your scanner" glyph="🧴" />
+          {/* Was an inert Pressable announcing "button" and doing nothing.
+              PlanRow now drops the button role when there is no onPress. */}
+          <PlanRow
+            label="Meet your scanner"
+            glyph="🧴"
+            onPress={() => router.push('/scan')}
+          />
           <PlanRow label="Learn your daily plan" locked />
           <PlanRow label="Check your skin" locked />
         </View>

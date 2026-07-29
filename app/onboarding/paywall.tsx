@@ -3,10 +3,12 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import {
+  BUTTON_HEIGHT,
   Button,
   PriceOption,
   StickyDock,
   Text,
+  useStickyDockHeight,
 } from '../../src/components';
 import { COPY } from '../../src/features/onboarding/questions';
 import { useOnboarding } from '../../src/features/onboarding/state';
@@ -17,6 +19,7 @@ export default function Paywall() {
   const t = useTheme();
   const insets = useSafeAreaInsets();
   const { state, dispatch } = useOnboarding();
+  const dockClearance = useStickyDockHeight(BUTTON_HEIGHT);
 
   return (
     <View style={{ flex: 1, backgroundColor: t.color.palette.canvas }}>
@@ -24,7 +27,7 @@ export default function Paywall() {
         contentContainerStyle={{
           paddingTop: insets.top + t.spacing.xl,
           paddingHorizontal: t.spacing.lg,
-          paddingBottom: 200,
+          paddingBottom: dockClearance + t.spacing.xl,
           gap: t.spacing.lg,
         }}
       >
@@ -72,6 +75,11 @@ export default function Paywall() {
           label={COPY.paywall.cta}
           onPress={() => {
             dispatch({ type: 'subscribe' });
+            // dismissAll() first: replace() swaps only the TOP stack entry, so
+            // without this the four onboarding screens stay alive underneath
+            // the tab shell and an iOS swipe-back drops the user who just paid
+            // straight into "Tailoring your routine...".
+            router.dismissAll();
             router.replace('/(tabs)/today');
           }}
         />

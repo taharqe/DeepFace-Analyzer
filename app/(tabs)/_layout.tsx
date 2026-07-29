@@ -28,6 +28,13 @@ import { useTheme } from '../../src/theme';
  * commitment could plausibly blur, and it resolves toward indigo: the tab you
  * are on states where the app IS, rather than previewing a choice.
  */
+
+/**
+ * Without this, expo-router resolves the group's initial route to the LAST
+ * declared child, so Back from any tab landed on You rather than Today.
+ */
+export const unstable_settings = { initialRouteName: 'today' };
+
 const TABS = [
   { name: 'today', href: '/today', glyph: '◗', label: 'Today' },
   { name: 'products', href: '/products', glyph: '◫', label: 'Products' },
@@ -55,9 +62,19 @@ const DockItem = forwardRef<View, DockItemProps>(
         accessibilityRole="tab"
         accessibilityState={{ selected: !!isFocused }}
         accessibilityLabel={label}
-        style={styles.item}
+        style={[
+          styles.item,
+          // gap comes from the token, not a bare 2 - StyleSheet.create has no
+          // hook access, so anything token-derived has to be applied inline.
+          { minHeight: t.metrics.minTouchTarget, gap: t.spacing.half },
+        ]}
       >
-        <Text variant="title.sm" style={{ color }}>
+        <Text
+          variant="title.sm"
+          style={{ color }}
+          accessibilityElementsHidden
+          importantForAccessibility="no-hide-descendants"
+        >
           {glyph}
         </Text>
         <Text variant="caption" style={{ color }}>
@@ -68,6 +85,9 @@ const DockItem = forwardRef<View, DockItemProps>(
   },
 );
 DockItem.displayName = 'DockItem';
+
+/** Height of a dock item, so screens can compute their scroll clearance. */
+export const TAB_ITEM_HEIGHT = 44;
 
 export default function TabsLayout() {
   const t = useTheme();
@@ -95,5 +115,5 @@ export default function TabsLayout() {
 }
 
 const styles = StyleSheet.create({
-  item: { flex: 1, alignItems: 'center', gap: 2 },
+  item: { flex: 1, alignItems: 'center', justifyContent: 'center' },
 });

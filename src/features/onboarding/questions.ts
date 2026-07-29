@@ -45,6 +45,16 @@ export const COPY = {
     caption: 'products in the catalogue',
     cta: 'Show my routine',
   },
+  reveal: {
+    title: 'Results with routine',
+    body: 'Built from your answers, adjusted every time you scan.',
+    before: 'Today',
+    after: 'With routine',
+    /** [E] Stands in for whatever the panels actually depict. */
+    placeholder: 'Preview',
+    targeting: 'Targeting',
+    cta: 'See my plan',
+  },
   paywall: {
     title: 'Unlock your full routine',
     benefits: [

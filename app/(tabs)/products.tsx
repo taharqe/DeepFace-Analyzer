@@ -1,13 +1,15 @@
 import { ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { ProductCard, Text } from '../../src/components';
+import { ProductCard, Text, useStickyDockHeight } from '../../src/components';
 import { PRODUCTS } from '../../src/features/catalogue/data';
 import { isMeasuredBand } from '../../src/features/catalogue/match';
 import { useTheme } from '../../src/theme';
+import { TAB_ITEM_HEIGHT } from './_layout';
 
 export default function Products() {
   const t = useTheme();
+  const dockClearance = useStickyDockHeight(TAB_ITEM_HEIGHT, 8);
   const insets = useSafeAreaInsets();
 
   // Only products in a band the design system has a measured colour for.
@@ -22,7 +24,7 @@ export default function Products() {
         contentContainerStyle={{
           paddingTop: insets.top + t.spacing.xl,
           paddingHorizontal: t.spacing.lg,
-          paddingBottom: 140,
+          paddingBottom: dockClearance + t.spacing.xl,
           gap: t.spacing.md,
         }}
       >

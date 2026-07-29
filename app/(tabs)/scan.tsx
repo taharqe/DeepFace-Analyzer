@@ -1,10 +1,12 @@
 import { LinearGradient } from 'expo-linear-gradient';
+import { StatusBar } from 'expo-status-bar';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Button, Text } from '../../src/components';
+import { Button, Text, useStickyDockHeight } from '../../src/components';
 import { successGradient, useTheme, voidGradient } from '../../src/theme';
+import { TAB_ITEM_HEIGHT } from './_layout';
 
 /**
  * Scan.
@@ -19,6 +21,7 @@ import { successGradient, useTheme, voidGradient } from '../../src/theme';
  */
 export default function Scan() {
   const t = useTheme();
+  const dockClearance = useStickyDockHeight(TAB_ITEM_HEIGHT, 8);
   const insets = useSafeAreaInsets();
   const [phase, setPhase] = useState<'idle' | 'done'>('idle');
 
@@ -34,11 +37,14 @@ export default function Scan() {
         styles.screen,
         {
           paddingTop: insets.top + t.spacing.xl,
-          paddingBottom: 140,
+          paddingBottom: dockClearance + t.spacing.xl,
           paddingHorizontal: t.spacing.lg,
         },
       ]}
     >
+      {/* Void ramp needs light; the success flood is light enough for dark. */}
+      <StatusBar style={phase === 'done' ? 'dark' : 'light'} />
+
       <View style={styles.center}>
         <Text
           variant="display.md"

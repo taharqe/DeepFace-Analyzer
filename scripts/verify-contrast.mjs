@@ -1,18 +1,47 @@
 /**
  * Asserts every foreground/background pairing the design system ships.
  *
- * This exists because the contrast fixes are the easiest thing in the system
- * to undo by accident. "White text on the pink badge" looks right to almost
+ * This exists because the contrast fixes are the easiest thing in the system to
+ * undo by accident. "White text on the pink badge" looks right to almost
  * everyone until it is measured at 2.21:1. A regression here is invisible in
  * review and invisible in a screenshot.
  *
+ * It reads src/theme/palette.json - the SAME file src/theme/color.ts imports.
+ * An earlier version of this script held its own copies of the hex values, which
+ * meant it only ever compared its constants against each other: reverting
+ * fgSecondary to the failing #838383 left the script printing "All contrast
+ * assertions hold" while the app shipped 3.79:1 body text. A guard with its own
+ * copy of the data guards nothing.
+ *
  * Run: node scripts/verify-contrast.mjs
- * Exits non-zero if any shipped pairing drops below its required ratio.
+ * Exits non-zero if any shipped pairing drops below its required ratio, if a
+ * forbidden pairing starts passing, or if a token named here has gone missing.
  */
+import { readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const INK = '#0B0B0A';
-const WHITE = '#FFFFFF';
-const CANVAS = '#F6F5F3';
+const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
+const PALETTE_PATH = join(ROOT, 'src/theme/palette.json');
+const COLOR_TS = join(ROOT, 'src/theme/color.ts');
+
+const P = JSON.parse(readFileSync(PALETTE_PATH, 'utf8'));
+
+/**
+ * Mirrors mixHex() in color.ts. The disabled fill is COMPUTED from the palette
+ * in both places rather than pasted, so it cannot drift.
+ */
+const mixHex = (fg, bg, alpha) => {
+  const ch = (h, i) => parseInt(h.slice(1 + i * 2, 3 + i * 2), 16);
+  return (
+    '#' +
+    [0, 1, 2]
+      .map((i) => Math.round(ch(fg, i) * alpha + ch(bg, i) * (1 - alpha)))
+      .map((v) => v.toString(16).padStart(2, '0'))
+      .join('')
+      .toUpperCase()
+  );
+};
 
 const srgb = (c) => {
   const v = c / 255;
@@ -30,44 +59,94 @@ const ratio = (fg, bg) => {
   return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
 };
 
+let failed = 0;
+
+/** Guard against a token being renamed or dropped out from under the assertions. */
+const REQUIRED = [
+  'canvas', 'surface', 'assistant', 'actionPrimary', 'actionSelection',
+  'scoreHigh', 'scoreMid', 'accentCommerce', 'fgPrimary', 'fgSecondary',
+  'voidStart', 'voidEnd', 'successStart', 'successEnd',
+];
+const missing = REQUIRED.filter((k) => typeof P[k] !== 'string');
+if (missing.length) {
+  console.error(`palette.json is missing: ${missing.join(', ')}`);
+  process.exit(1);
+}
+const malformed = REQUIRED.filter((k) => !/^#[0-9A-Fa-f]{6}$/.test(P[k]));
+if (malformed.length) {
+  console.error(`palette.json has malformed hex for: ${malformed.join(', ')}`);
+  process.exit(1);
+}
+
+/**
+ * color.ts must consume palette.json rather than reintroducing literals.
+ * Without this check the two could silently diverge again.
+ */
+const colorSrc = readFileSync(COLOR_TS, 'utf8');
+if (!/from\s+'\.\/palette\.json'/.test(colorSrc)) {
+  console.error('src/theme/color.ts no longer imports palette.json - the guard is detached.');
+  process.exit(1);
+}
+const strayHex = [...colorSrc.matchAll(/#[0-9A-Fa-f]{6}\b/g)].map((m) => m[0]);
+// Hexes quoted inside comments are documentation (e.g. "corrected from #838383").
+// Only a hex in actual code is a re-introduced literal.
+const strayInCode = strayHex.filter((hex) => {
+  const re = new RegExp(`['"\`]${hex}['"\`]`);
+  return re.test(colorSrc.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, ''));
+});
+if (strayInCode.length) {
+  console.error(`src/theme/color.ts reintroduced literal hex values: ${[...new Set(strayInCode)].join(', ')}`);
+  console.error('Move them into palette.json so the guard can see them.');
+  failed++;
+}
+
+const INK = P.fgPrimary;
+const WHITE = P.surface;
+const CANVAS = P.canvas;
+
 /** Every pairing the components actually render, with its required minimum. */
 const SHIPPED = [
   ['ink on canvas', INK, CANVAS, 4.5],
   ['ink on surface', INK, WHITE, 4.5],
-  ['secondary on surface', '#6B6864', WHITE, 4.5],
-  ['secondary on canvas', '#6B6864', CANVAS, 4.5],
-  ['ink on assistant lilac', INK, '#F9F4F8', 4.5],
+  ['secondary on surface', P.fgSecondary, WHITE, 4.5],
+  ['secondary on canvas', P.fgSecondary, CANVAS, 4.5],
+  ['ink on assistant lilac', INK, P.assistant, 4.5],
 
   // Badge tones - all ink, none white. See Badge.tsx.
-  ['badge ink on selection pink', INK, '#FF88BB', 4.5],
-  ['badge ink on score/high', INK, '#B16BFF', 4.5],
-  ['badge ink on score/mid', INK, '#40BB7C', 4.5],
-  ['badge ink on commerce', INK, '#F8D94B', 4.5],
+  ['badge ink on selection pink', INK, P.actionSelection, 4.5],
+  ['badge ink on score/high', INK, P.scoreHigh, 4.5],
+  ['badge ink on score/mid', INK, P.scoreMid, 4.5],
+  ['badge ink on commerce', INK, P.accentCommerce, 4.5],
 
   // Indigo is the only fill that carries white.
-  ['white on indigo CTA', WHITE, '#5363FF', 4.5],
+  ['white on indigo CTA', WHITE, P.actionPrimary, 4.5],
 
   // Void ramp, both ends.
-  ['inverse on void start', WHITE, '#030B0E', 4.5],
-  ['inverse on void end', WHITE, '#0B1C2C', 4.5],
+  ['inverse on void start', WHITE, P.voidStart, 4.5],
+  ['inverse on void end', WHITE, P.voidEnd, 4.5],
 
   // Success flood carries ink, not white - the gap the spec's audit missed.
-  ['ink on success start', INK, '#019A88', 4.5],
-  ['ink on success end', INK, '#00B1D3', 4.5],
+  ['ink on success start', INK, P.successStart, 4.5],
+  ['ink on success end', INK, P.successEnd, 4.5],
+
+  // Disabled CTA: tinted fill with an ink label, not a faded white one.
+  // A whole-subtree opacity measured 1.94:1 on the rendered DOM.
+  ['ink on disabled fill', INK, mixHex(P.actionPrimary, P.canvas, 0.4), 4.5],
 ];
 
 /** Pairings that must NEVER ship. Guards against a well-meaning "fix". */
 const FORBIDDEN = [
-  ['white on selection pink', WHITE, '#FF88BB'],
-  ['white on score/high', WHITE, '#B16BFF'],
-  ['white on score/mid', WHITE, '#40BB7C'],
-  ['white on success start', WHITE, '#019A88'],
-  ['white on success end', WHITE, '#00B1D3'],
-  ['indigo text on canvas', '#5363FF', CANVAS],
-  ['old secondary #838383 on surface', '#838383', WHITE],
+  ['white on selection pink', WHITE, P.actionSelection],
+  ['white on score/high', WHITE, P.scoreHigh],
+  ['white on score/mid', WHITE, P.scoreMid],
+  ['white on success start', WHITE, P.successStart],
+  ['white on success end', WHITE, P.successEnd],
+  ['indigo text on canvas', P.actionPrimary, CANVAS],
+  ['white on disabled fill', WHITE, mixHex(P.actionPrimary, P.canvas, 0.4)],
+  // Not read from the palette on purpose: this is the value fgSecondary must
+  // never revert to, so it is pinned here as a literal.
+  ['reverted secondary #838383 on surface', '#838383', WHITE],
 ];
-
-let failed = 0;
 
 console.log('SHIPPED PAIRINGS');
 for (const [label, fg, bg, min] of SHIPPED) {

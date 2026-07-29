@@ -38,7 +38,17 @@ export interface ButtonProps {
   style?: StyleProp<ViewStyle>;
 }
 
-/** [D] 56pt - the CTA is one 4pt step below the 64pt option row. */
+/**
+ * [E] 56pt.
+ *
+ * No CTA height is measured anywhere in the corpus - section 02 gives only the
+ * 120px (64pt) option row. This is a free choice, proposed as two 4pt steps
+ * below that row so the CTA reads as lighter than a question option.
+ *
+ * It was previously marked [D] with the comment "one 4pt step below the 64pt
+ * option row", which was both arithmetically wrong (64 - 56 = 8, two steps) and
+ * claimed measurement provenance the corpus does not supply.
+ */
 export const BUTTON_HEIGHT = 56;
 
 export function Button({
@@ -50,12 +60,28 @@ export function Button({
 }: ButtonProps) {
   const t = useTheme();
 
-  const backgroundColor =
+  const enabledFill =
     variant === 'primary'
       ? t.color.palette.actionPrimary
       : variant === 'secondary'
         ? t.color.palette.surface
         : 'transparent';
+
+  /**
+   * Disabled primary tints the fill and switches the label to ink, rather than
+   * fading the whole control.
+   *
+   * Reducing opacity across the subtree - the obvious approach - measured
+   * 1.94:1 on the rendered DOM, because indigo's luminance is 0.1798 and white
+   * text needs a ground at or below 0.1833. Indigo sits 2% from that cliff, so
+   * any lightening at all breaks white-on-indigo. A tinted indigo is no longer
+   * the commitment indigo; it is a tint, and by the system's own rule tints
+   * carry ink. 10.72:1.
+   */
+  const showDisabledFill = disabled && variant === 'primary';
+  const backgroundColor = showDisabledFill ? t.color.disabled.fill : enabledFill;
+  const labelTone =
+    variant === 'primary' && !showDisabledFill ? 'inverse' : 'primary';
 
   return (
     <Pressable
@@ -67,21 +93,26 @@ export function Button({
       style={({ pressed }) => [
         styles.base,
         {
-          height: BUTTON_HEIGHT,
+          // minHeight, not height: at large Dynamic Type settings a fixed height
+          // clips the label instead of letting the control grow.
+          minHeight: BUTTON_HEIGHT,
+          paddingVertical: t.spacing.md,
+          paddingHorizontal: t.spacing.xl,
           borderRadius: t.radius.capsule,
           backgroundColor,
           // [E] Press feedback is not observable in a still.
-          opacity: disabled ? 0.4 : pressed ? 0.92 : 1,
+          // Only the ENABLED control dims on press; the disabled state carries
+          // its own fill and must not be dimmed further.
+          opacity: !disabled && pressed ? 0.92 : 1,
         },
-        variant === 'secondary' && t.shadow.card,
+        variant === 'secondary' && !disabled && t.shadow.card,
+        // Ghost has no fill to tint, so it keeps the opacity treatment.
+        disabled && variant !== 'primary' && styles.dim,
         style,
       ]}
     >
       <View style={styles.inner}>
-        <Text
-          variant="title.sm"
-          tone={variant === 'primary' ? 'inverse' : 'primary'}
-        >
+        <Text variant="title.sm" tone={labelTone}>
           {label}
         </Text>
       </View>
@@ -92,4 +123,5 @@ export function Button({
 const styles = StyleSheet.create({
   base: { alignItems: 'center', justifyContent: 'center' },
   inner: { alignItems: 'center', justifyContent: 'center' },
+  dim: { opacity: 0.4 },
 });
