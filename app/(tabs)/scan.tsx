@@ -1,4 +1,5 @@
 import { LinearGradient } from 'expo-linear-gradient';
+import { useIsFocused } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -24,6 +25,7 @@ export default function Scan() {
   const dockClearance = useStickyDockHeight(TAB_ITEM_HEIGHT, 8);
   const insets = useSafeAreaInsets();
   const [phase, setPhase] = useState<'idle' | 'done'>('idle');
+  const focused = useIsFocused();
 
   const colors: [string, string] =
     phase === 'done'
@@ -42,8 +44,15 @@ export default function Scan() {
         },
       ]}
     >
-      {/* Void ramp needs light; the success flood is light enough for dark. */}
-      <StatusBar style={phase === 'done' ? 'dark' : 'light'} />
+      {/*
+        Focus-gated. expo-router/ui's TabSlot never unmounts a visited tab - it
+        keeps rendering it with display:none - so an unconditional StatusBar
+        here stayed on the props stack forever and left every other tab (all
+        near-white canvas) with light status text.
+      */}
+      {focused ? (
+        <StatusBar style={phase === 'done' ? 'dark' : 'light'} />
+      ) : null}
 
       <View style={styles.center}>
         <Text
@@ -67,6 +76,7 @@ export default function Scan() {
       <Button
         label={phase === 'done' ? 'Scan again' : 'Start scan'}
         variant={phase === 'done' ? 'secondary' : 'primary'}
+        ground={phase === 'done' ? successGradient[0] : voidGradient[0]}
         onPress={() => setPhase(phase === 'done' ? 'idle' : 'done')}
       />
     </LinearGradient>

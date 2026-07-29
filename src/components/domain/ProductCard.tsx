@@ -16,12 +16,20 @@ import { ScoreBadge } from './ScoreBadge';
  *
  * The price uses the commerce yellow, which the spec restricts to price pills
  * and nothing else.
+ *
+ * `score` is a REQUIRED PROP rather than a field read off the product. It used
+ * to come from `product.score`, a literal baked into the catalogue - identical
+ * for every user, computed from nothing. Making the caller pass it means a
+ * screen cannot render a fit figure without having asked the routine engine
+ * for one.
  */
 export interface ProductCardProps {
   product: Product;
+  /** 0-100, computed for the current user by the routine engine. */
+  score: number;
 }
 
-export function ProductCard({ product }: ProductCardProps) {
+export function ProductCard({ product, score }: ProductCardProps) {
   const t = useTheme();
 
   return (
@@ -33,7 +41,7 @@ export function ProductCard({ product }: ProductCardProps) {
           </Text>
           <Text variant="title.sm">{product.name}</Text>
         </View>
-        <ScoreBadge score={product.score} />
+        <ScoreBadge score={score} />
       </View>
 
       <View style={[styles.metaRow, { gap: t.spacing.sm }]}>

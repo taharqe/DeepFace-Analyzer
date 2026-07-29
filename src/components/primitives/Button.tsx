@@ -6,7 +6,8 @@ import {
   type ViewStyle,
 } from 'react-native';
 
-import { useTheme } from '../../theme';
+import { disabledFillOn, readableOn, useTheme } from '../../theme';
+import { PRESS_OPACITY } from './press';
 import { Text } from './Text';
 
 /**
@@ -35,6 +36,13 @@ export interface ButtonProps {
   onPress?: () => void;
   variant?: ButtonVariant;
   disabled?: boolean;
+  /**
+   * Hex of the background this button sits on. Defaults to canvas.
+   *
+   * Required for correctness on the void ramp, not a nicety - see the disabled
+   * treatment below.
+   */
+  ground?: string;
   style?: StyleProp<ViewStyle>;
 }
 
@@ -44,10 +52,6 @@ export interface ButtonProps {
  * No CTA height is measured anywhere in the corpus - section 02 gives only the
  * 120px (64pt) option row. This is a free choice, proposed as two 4pt steps
  * below that row so the CTA reads as lighter than a question option.
- *
- * It was previously marked [D] with the comment "one 4pt step below the 64pt
- * option row", which was both arithmetically wrong (64 - 56 = 8, two steps) and
- * claimed measurement provenance the corpus does not supply.
  */
 export const BUTTON_HEIGHT = 56;
 
@@ -56,9 +60,11 @@ export function Button({
   onPress,
   variant = 'primary',
   disabled = false,
+  ground,
   style,
 }: ButtonProps) {
   const t = useTheme();
+  const bg = ground ?? t.color.palette.canvas;
 
   const enabledFill =
     variant === 'primary'
@@ -68,20 +74,32 @@ export function Button({
         : 'transparent';
 
   /**
-   * Disabled primary tints the fill and switches the label to ink, rather than
-   * fading the whole control.
+   * Disabled primary tints the fill TOWARD ITS GROUND, and picks the label by
+   * luminance.
    *
-   * Reducing opacity across the subtree - the obvious approach - measured
+   * Two failures are being avoided here. Fading the whole control measured
    * 1.94:1 on the rendered DOM, because indigo's luminance is 0.1798 and white
-   * text needs a ground at or below 0.1833. Indigo sits 2% from that cliff, so
-   * any lightening at all breaks white-on-indigo. A tinted indigo is no longer
-   * the commitment indigo; it is a tint, and by the system's own rule tints
-   * carry ink. 10.72:1.
+   * needs a ground at or below 0.1833 - it sits 2% from the cliff, so any
+   * lightening breaks white text.
+   *
+   * The first fix, a single tint computed against canvas, was worse in a way
+   * that only showed up on a dark screen: on the void ramp that fixed light
+   * fill measured 10.80:1 while the ENABLED indigo measured 4.34:1, making the
+   * disabled button ~2.5x more prominent than its own enabled state and the
+   * brightest thing on a near-black screen.
+   *
+   * Tinting toward the ground makes it recede on any background, which is what
+   * disabled should look like everywhere.
    */
-  const showDisabledFill = disabled && variant === 'primary';
-  const backgroundColor = showDisabledFill ? t.color.disabled.fill : enabledFill;
-  const labelTone =
-    variant === 'primary' && !showDisabledFill ? 'inverse' : 'primary';
+  const showTintedDisabled = disabled && variant === 'primary';
+  const disabledFill = showTintedDisabled ? disabledFillOn(bg) : null;
+  const backgroundColor = disabledFill ?? enabledFill;
+
+  const labelColor = disabledFill
+    ? readableOn(disabledFill)
+    : variant === 'primary'
+      ? t.color.onFill.actionPrimary
+      : t.color.text.primary;
 
   return (
     <Pressable
@@ -100,10 +118,9 @@ export function Button({
           paddingHorizontal: t.spacing.xl,
           borderRadius: t.radius.capsule,
           backgroundColor,
-          // [E] Press feedback is not observable in a still.
-          // Only the ENABLED control dims on press; the disabled state carries
-          // its own fill and must not be dimmed further.
-          opacity: !disabled && pressed ? 0.92 : 1,
+          // [E] Press feedback is not observable in a still. Only the ENABLED
+          // control dims; the disabled state carries its own fill.
+          opacity: !disabled && pressed ? PRESS_OPACITY : 1,
         },
         variant === 'secondary' && !disabled && t.shadow.card,
         // Ghost has no fill to tint, so it keeps the opacity treatment.
@@ -112,7 +129,7 @@ export function Button({
       ]}
     >
       <View style={styles.inner}>
-        <Text variant="title.sm" tone={labelTone}>
+        <Text variant="title.sm" style={{ color: labelColor }}>
           {label}
         </Text>
       </View>

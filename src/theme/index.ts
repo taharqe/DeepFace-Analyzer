@@ -1,7 +1,10 @@
 export {
   DISABLED_FILL_ALPHA,
   disabled,
+  disabledFillOn,
+  luminance,
   mixHex,
+  readableOn,
   onFill,
   onVoid,
   palette,

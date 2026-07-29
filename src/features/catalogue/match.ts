@@ -1,5 +1,3 @@
-import type { BadgeTone } from '../../components/primitives';
-
 /**
  * Match-score banding.
  *
@@ -19,10 +17,21 @@ import type { BadgeTone } from '../../components/primitives';
  */
 export const SCORE_BANDS = { high: 90, mid: 70 } as const;
 
-export function toneForScore(score: number): BadgeTone {
-  if (score >= SCORE_BANDS.high) return 'scoreHigh';
-  if (score >= SCORE_BANDS.mid) return 'scoreMid';
-  return 'neutral';
+/**
+ * The band a score falls in, as a domain concept.
+ *
+ * This deliberately does NOT return a Badge tone. features/ is pure logic and
+ * must not import from components/ - it previously imported `BadgeTone`, which
+ * pointed the dependency arrow backwards and meant the catalogue could not be
+ * tested or reused without the UI layer. The mapping from band to tone belongs
+ * in the component that renders it.
+ */
+export type ScoreBand = 'high' | 'mid' | 'unbanded';
+
+export function bandForScore(score: number): ScoreBand {
+  if (score >= SCORE_BANDS.high) return 'high';
+  if (score >= SCORE_BANDS.mid) return 'mid';
+  return 'unbanded';
 }
 
 /** True when the score falls into a band the design system has a colour for. */

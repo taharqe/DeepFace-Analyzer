@@ -147,12 +147,45 @@ export function mixHex(fg: string, bg: string, alpha: number): string {
   return `#${out.toUpperCase()}`;
 }
 
+/** WCAG 2.1 relative luminance. */
+export function luminance(hex: string): number {
+  const lin = (c: number) => {
+    const v = c / 255;
+    return v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4;
+  };
+  const ch = (i: number) => parseInt(hex.slice(1 + i * 2, 3 + i * 2), 16);
+  return 0.2126 * lin(ch(0)) + 0.7152 * lin(ch(1)) + 0.0722 * lin(ch(2));
+}
+
+/** Ink or white, whichever has more contrast against `bg`. */
+export function readableOn(bg: string): string {
+  const l = luminance(bg);
+  const withInk = (l + 0.05) / (luminance(palette.fgPrimary) + 0.05);
+  const withWhite = (luminance(palette.surface) + 0.05) / (l + 0.05);
+  return withInk >= withWhite ? palette.fgPrimary : palette.surface;
+}
+
+/**
+ * Disabled fill for a control sitting on `ground`.
+ *
+ * [E] The ground argument is not decoration. A single constant computed against
+ *     canvas was wrong the moment a disabled CTA appeared on the void ramp:
+ *     that fill measured 10.80:1 against the ramp while the ENABLED indigo
+ *     measured 4.34:1, so the disabled button became the brightest element on a
+ *     near-black screen - roughly 2.5x more prominent than its own enabled
+ *     state, for the whole tailoring sequence.
+ *
+ *     Tinting toward the ground instead makes the control recede on ANY
+ *     background, which is what "disabled" should look like. The label is then
+ *     picked by luminance rather than assumed, because the resulting fill can
+ *     land light or dark depending on where it sits.
+ */
+export function disabledFillOn(ground: string): string {
+  return mixHex(palette.actionPrimary, ground, DISABLED_FILL_ALPHA);
+}
+
 export const disabled = {
-  /**
-   * Indigo at 40% over canvas, COMPUTED rather than pasted. A literal here
-   * would be a colour the guard cannot trace, and would silently stop matching
-   * if actionPrimary or canvas ever changed.
-   */
+  /** Convenience for the common light-ground case. Prefer disabledFillOn(). */
   fill: mixHex(palette.actionPrimary, palette.canvas, DISABLED_FILL_ALPHA),
 } as const;
 

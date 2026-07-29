@@ -87,17 +87,70 @@ if (!/from\s+'\.\/palette\.json'/.test(colorSrc)) {
   console.error('src/theme/color.ts no longer imports palette.json - the guard is detached.');
   process.exit(1);
 }
-const strayHex = [...colorSrc.matchAll(/#[0-9A-Fa-f]{6}\b/g)].map((m) => m[0]);
-// Hexes quoted inside comments are documentation (e.g. "corrected from #838383").
-// Only a hex in actual code is a re-introduced literal.
-const strayInCode = strayHex.filter((hex) => {
-  const re = new RegExp(`['"\`]${hex}['"\`]`);
-  return re.test(colorSrc.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, ''));
-});
+/**
+ * Find hex literals that appear in CODE, not in comments.
+ *
+ * A previous version stripped comments with two regexes
+ * (/\/\*[\s\S]*?\*\//g then /\/\/.*$/gm) and then searched the remainder.
+ * Neither knows what a string is, so `const u = 'https://x.dev/';` deleted the
+ * rest of that physical line - and any hex literal sitting after it went
+ * undetected. A single URL was enough to smuggle a colour past the guard.
+ *
+ * This is a single-pass scanner that tracks string, template and comment state,
+ * so a `//` inside quotes is just characters.
+ */
+function quotedHexLiterals(src) {
+  const found = [];
+  let i = 0;
+  const n = src.length;
+  while (i < n) {
+    const c = src[i];
+    const next = src[i + 1];
+
+    if (c === '/' && next === '*') {
+      const end = src.indexOf('*/', i + 2);
+      i = end === -1 ? n : end + 2;
+      continue;
+    }
+    if (c === '/' && next === '/') {
+      const end = src.indexOf('\n', i + 2);
+      i = end === -1 ? n : end + 1;
+      continue;
+    }
+    if (c === '"' || c === "'" || c === '`') {
+      const quote = c;
+      let j = i + 1;
+      let body = '';
+      while (j < n) {
+        if (src[j] === '\\') { body += src[j + 1] ?? ''; j += 2; continue; }
+        if (src[j] === quote) break;
+        // An unterminated single/double quote cannot span a newline.
+        if (quote !== '`' && src[j] === '\n') break;
+        body += src[j];
+        j += 1;
+      }
+      const m = body.match(/^#[0-9A-Fa-f]{3,8}$/);
+      if (m) found.push(body);
+      i = j + 1;
+      continue;
+    }
+    i += 1;
+  }
+  return found;
+}
+
+const strayInCode = [...new Set(quotedHexLiterals(colorSrc))];
 if (strayInCode.length) {
-  console.error(`src/theme/color.ts reintroduced literal hex values: ${[...new Set(strayInCode)].join(', ')}`);
+  console.error(`src/theme/color.ts reintroduced literal hex values: ${strayInCode.join(', ')}`);
   console.error('Move them into palette.json so the guard can see them.');
   failed++;
+}
+
+const ALPHA_MATCH = /DISABLED_FILL_ALPHA\s*=\s*([\d.]+)/.exec(colorSrc);
+const DISABLED_ALPHA = ALPHA_MATCH ? Number(ALPHA_MATCH[1]) : Number.NaN;
+if (!Number.isFinite(DISABLED_ALPHA) || DISABLED_ALPHA < 0 || DISABLED_ALPHA > 1) {
+  console.error('cannot read DISABLED_FILL_ALPHA from src/theme/color.ts');
+  process.exit(1);
 }
 
 const INK = P.fgPrimary;
@@ -131,7 +184,13 @@ const SHIPPED = [
 
   // Disabled CTA: tinted fill with an ink label, not a faded white one.
   // A whole-subtree opacity measured 1.94:1 on the rendered DOM.
-  ['ink on disabled fill', INK, mixHex(P.actionPrimary, P.canvas, 0.4), 4.5],
+  // The disabled fill tints toward whatever it sits ON, so both grounds it is
+  // actually used against must be asserted. Checking only the label-vs-fill
+  // pair in isolation is what let the void-ramp regression through: the fill
+  // was brighter than the enabled state and no assertion could see it.
+  ['ink on disabled fill (canvas)', INK, mixHex(P.actionPrimary, P.canvas, DISABLED_ALPHA), 4.5],
+  ['ink on disabled fill (surface)', INK, mixHex(P.actionPrimary, P.surface, DISABLED_ALPHA), 4.5],
+  ['inverse on disabled fill (void)', WHITE, mixHex(P.actionPrimary, P.voidStart, DISABLED_ALPHA), 4.5],
 ];
 
 /** Pairings that must NEVER ship. Guards against a well-meaning "fix". */
@@ -142,7 +201,7 @@ const FORBIDDEN = [
   ['white on success start', WHITE, P.successStart],
   ['white on success end', WHITE, P.successEnd],
   ['indigo text on canvas', P.actionPrimary, CANVAS],
-  ['white on disabled fill', WHITE, mixHex(P.actionPrimary, P.canvas, 0.4)],
+  ['white on disabled fill (canvas)', WHITE, mixHex(P.actionPrimary, P.canvas, DISABLED_ALPHA)],
   // Not read from the palette on purpose: this is the value fgSecondary must
   // never revert to, so it is pinned here as a literal.
   ['reverted secondary #838383 on surface', '#838383', WHITE],

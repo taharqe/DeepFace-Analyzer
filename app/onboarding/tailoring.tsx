@@ -1,12 +1,12 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { StatusBar } from 'expo-status-bar';
-import { router } from 'expo-router';
+import { router, useIsFocused } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button, ProgressTrack, Text } from '../../src/components';
-import { CATALOGUE_SIZE } from '../../src/features/catalogue/data';
+import { CATALOGUE_SIZE } from '../../src/features/catalogue/products';
 import { COPY } from '../../src/features/onboarding/questions';
 import { rawCount } from '../../src/lib/format';
 import { onVoid, useTheme, voidGradient } from '../../src/theme';
@@ -28,6 +28,7 @@ export default function Tailoring() {
   const t = useTheme();
   const insets = useSafeAreaInsets();
   const [progress, setProgress] = useState(0);
+  const focused = useIsFocused();
 
   useEffect(() => {
     const started = Date.now();
@@ -76,13 +77,24 @@ export default function Tailoring() {
         />
       </View>
 
-      {/* The root layout sets style="dark", which is invisible on the void
-          ramp. Each void screen overrides it locally. */}
-      <StatusBar style="light" />
+      {/*
+        Focus-GATED, not merely mounted.
+
+        expo-status-bar merges a static props stack in MOUNT order, and a native
+        stack keeps screens below the top one mounted. An unconditional
+        <StatusBar style="light" /> here therefore stayed the last-pushed entry
+        after pushing to Reveal and Paywall - both of which render on the
+        near-white canvas - leaving white status text on a white background for
+        the rest of onboarding.
+      */}
+      {focused ? <StatusBar style="light" /> : null}
 
       <Button
         label={COPY.tailoring.cta}
         disabled={!done}
+        // The disabled tint is computed against this ground. Without it the
+        // disabled CTA rendered lighter than its own enabled state here.
+        ground={voidGradient[0]}
         onPress={() => router.push('/onboarding/reveal')}
       />
     </LinearGradient>

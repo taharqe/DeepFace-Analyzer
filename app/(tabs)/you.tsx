@@ -79,9 +79,11 @@ export default function You() {
           variant="secondary"
           onPress={() => {
             dispatch({ type: 'reset' });
-            // Same stack leak as the paywall, in reverse: without dismissAll
-            // the four onboarding entries survive underneath Welcome.
-            router.dismissAll();
+            // No dismissAll() here. Both routes into (tabs) already leave the
+            // root stack holding a single entry - Welcome's "I already have an
+            // account" replaces index, and the paywall dismissAll()s before
+            // replacing - so there is never anything to dismiss from this
+            // screen, and calling it logs a dev-mode error.
             router.replace('/');
           }}
         />

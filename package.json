@@ -36,7 +36,8 @@
     "web": "expo start --web",
     "typecheck": "tsc --noEmit",
     "verify:contrast": "node scripts/verify-contrast.mjs",
-    "check": "tsc --noEmit && node scripts/verify-contrast.mjs"
+    "check": "tsc --noEmit && node scripts/verify-contrast.mjs && node --test \"src/**/*.test.ts\"",
+    "test": "node --test \"src/**/*.test.ts\""
   },
   "private": true
 }
