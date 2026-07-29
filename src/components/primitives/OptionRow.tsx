@@ -6,7 +6,7 @@ import {
   type ViewStyle,
 } from 'react-native';
 
-import { useTheme } from '../theme';
+import { useTheme } from '../../theme';
 import { Text } from './Text';
 
 /**

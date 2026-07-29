@@ -5,7 +5,7 @@ import {
   type TextStyle,
 } from 'react-native';
 
-import { useTheme, type TypeVariant } from '../theme';
+import { useTheme, type TypeVariant } from '../../theme';
 
 /**
  * Reconstructed from the AURA v0.1.0 spec - the Text.tsx upload arrived as an

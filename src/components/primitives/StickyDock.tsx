@@ -1,7 +1,7 @@
 import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { useTheme } from '../theme';
+import { useTheme } from '../../theme';
 
 /**
  * Reconstructed from the AURA v0.1.0 spec - the StickyDock.tsx upload arrived
@@ -30,6 +30,16 @@ export interface StickyDockProps {
    * Extra bottom padding above the safe-area inset. Defaults to 16pt.
    */
   bottomInset?: number;
+  /**
+   * Lay children out in a row, evenly distributed.
+   *
+   * Required by the tab bar, and not merely cosmetic: expo-router's
+   * `parseTriggersFromChildren` unwraps exactly ONE layer beneath
+   * `<TabList asChild>`, so the `<TabTrigger>`s have to be direct children of
+   * this component. An intermediate row `<View>` silently hides them and the
+   * navigator throws "Couldn't find any screens".
+   */
+  row?: boolean;
   style?: StyleProp<ViewStyle>;
 }
 
@@ -37,6 +47,7 @@ export function StickyDock({
   children,
   transparent = false,
   bottomInset,
+  row = false,
   style,
 }: StickyDockProps) {
   const t = useTheme();
@@ -58,6 +69,7 @@ export function StickyDock({
           // indicator still needs the 16pt breathing room.
           paddingBottom: insets.bottom + pad,
         },
+        row && styles.row,
         // The same single measured shadow as every other raised surface.
         // The corpus has exactly one; there is no "dock shadow".
         !transparent && t.shadow.card,
@@ -75,5 +87,9 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
+  },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
 });
