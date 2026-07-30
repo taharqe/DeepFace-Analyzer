@@ -1,32 +1,32 @@
 # DeepFace Analyzer
 
-An Expo app for running DeepFace facial attribute analysis and reading the result
+A SwiftUI app for running DeepFace facial attribute analysis and reading the result
 alongside the model's confidence in it.
 
-The previous version of this project was a Streamlit web app. It was removed and
-rebuilt here as a React Native app targeting iOS, Android, and web.
+Shipped as a Swift package so it opens in Xcode without a checked-in `.xcodeproj`.
+The UI layer is complete; there is no backend yet, and the app runs in demo mode
+until you point it at one.
 
-## Running it
+## Getting it running
 
-```bash
-npm install
-npx expo start
-```
-
-Scan the QR code with Expo Go. No custom native build is required — every native
-module in use ships inside Expo Go.
+1. **Xcode → File → New → Project → iOS → App.** Name it `DeepFaceAnalyzer`,
+   interface SwiftUI, minimum deployment **iOS 17**.
+2. **Add this package.** File → Add Package Dependencies → Add Local → select this
+   repository folder. Add the `DeepFaceAnalyzer` library to your app target.
+3. **Replace the generated app file** with `AppTarget/DeepFaceAnalyzerApp.swift`.
+4. **Merge `AppTarget/Info.plist`** into your target's Info settings. The two usage
+   description keys are mandatory — iOS terminates the app on first camera or photo
+   access if either is missing, with no prompt.
+5. Build and run.
 
 ## Connecting an inference service
 
-DeepFace is a Python library and its models cannot run on-device, so the app posts
-each image to an endpoint and renders the response.
+DeepFace is a Python library; its models cannot run on-device. The app posts each
+image to an endpoint and renders the response.
 
-```bash
-EXPO_PUBLIC_ANALYZER_URL=https://your-service.example/analyze npx expo start
-```
-
-The endpoint receives a `multipart/form-data` POST with the image under the field
-name `image`, and should return DeepFace's attribute objects:
+Set `ANALYZER_URL` in `Info.plist`, or as an environment variable on your Xcode
+scheme. The endpoint receives a `multipart/form-data` POST with the image under the
+field name `image`, and should return DeepFace's attribute objects:
 
 ```json
 {
@@ -40,16 +40,15 @@ name `image`, and should return DeepFace's attribute objects:
 Return `422` when no face is detected — the app renders a specific message for that
 case rather than a generic failure.
 
-**With no URL set, the app runs in demo mode.** Results are generated locally from a
-hash of the image URI. They are deterministic per image and are not predictions. The
-Analyze screen says so on-screen; this is for exercising the interface, not for
-evaluating a model.
+**With no URL set, the app runs in demo mode.** Results are derived from a hash of
+the image path: deterministic per photo, and not predictions. The Analyze screen
+says so on-screen.
 
 ## What the app does not claim
 
 Facial attribute inference is unreliable in ways that a confidence percentage
-rendered in a clean interface tends to obscure. The About tab states this in the
-product, and the result cards repeat it next to the specific attributes affected:
+rendered in a polished interface tends to obscure. The About tab states this in the
+product, and result cards repeat it beside the specific attributes affected:
 
 - **Ethnicity prediction** has documented accuracy disparities across skin tones and
   was never validated for consequential use.
@@ -59,39 +58,44 @@ product, and the result cards repeat it next to the specific attributes affected
 - **Faces are biometric data.** Analyzing someone else's photograph may require their
   consent depending on jurisdiction.
 
-Results are held in memory for the session only. Nothing is written to disk.
+Results live in memory for the session only. Picked images are written to the caches
+directory, never to documents, so the system can reclaim them under pressure.
 
 ## Layout
 
 ```
-src/
-  app/
-    _layout.tsx           Root stack, theme, history provider
-    (tabs)/
-      _layout.tsx         Tab bar
-      index.tsx           Analyze — pick or capture, run, read the result
-      history.tsx         Session results and aggregate stats
-      about.tsx           Model limitations and service configuration
-  components/
-    aurora.tsx            Ambient backdrop
-    bezel.tsx             Nested container with concentric radii
-    action-button.tsx     Primary/secondary actions, icon button
-    confidence-bar.tsx    One score from a distribution, as a meter
-    result-card.tsx       One analysis, expanded
-    stat-tile.tsx         A number and its label
-    eyebrow.tsx           Small uppercase label
-    glyph.tsx             SF Symbols on iOS, unicode fallback elsewhere
-  lib/
-    analyzer.ts           Inference client, demo mode, attribute metadata
-    store.tsx             In-memory session history
-  theme/
-    tokens.ts             Colour, type, spacing, radii, motion
+Package.swift
+AppTarget/                      Files for your Xcode app target (not in the package)
+  DeepFaceAnalyzerApp.swift     @main entry point
+  Info.plist                    Usage descriptions and ANALYZER_URL
+Sources/DeepFaceAnalyzer/
+  App/RootView.swift            Tab shell, owns the HistoryStore
+  Screens/
+    AnalyzeScreen.swift         Pick or capture, run, read the result
+    HistoryScreen.swift         Session results and aggregate stats
+    AboutScreen.swift           Model limitations and service configuration
+  Components/
+    Aurora.swift                Ambient radial-gradient backdrop
+    Bezel.swift                 Nested container with concentric radii
+    ActionButton.swift          Primary/secondary actions, icon button
+    ConfidenceBar.swift         One score from a distribution, as a meter
+    ResultCard.swift            One analysis, expanded
+    StatTile.swift              A number and its label
+    Eyebrow.swift               Small uppercase label, caveat note
+    CameraPicker.swift          UIImagePickerController bridge, image caching
+  Models/
+    Analysis.swift              Attribute types and reliability metadata
+    AnalyzerClient.swift        Inference client, demo mode
+    HistoryStore.swift          Observable session history
+  Theme/Tokens.swift            Colour, type, spacing, radii, motion
 ```
 
-## Checks
+## Verification status
 
-```bash
-npx tsc --noEmit                      # types
-npx expo lint                         # lint
-npx expo export --platform android    # bundle
-```
+This was written on Linux, where SwiftUI cannot compile. What has been checked:
+
+- **Syntax:** all 19 files pass `swiftc -parse` under Swift 6.0.3.
+- **Manifest:** `swift package dump-package` resolves cleanly.
+
+What has **not** been checked: type-checking against SwiftUI, UIKit, and PhotosUI,
+and anything visual. The first Xcode build is the real test.
