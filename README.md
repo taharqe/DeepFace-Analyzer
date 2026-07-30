@@ -94,8 +94,27 @@ Sources/DeepFaceAnalyzer/
 
 This was written on Linux, where SwiftUI cannot compile. What has been checked:
 
-- **Syntax:** all 19 files pass `swiftc -parse` under Swift 6.0.3.
+- **Syntax:** all 18 Swift sources pass `swiftc -parse` under Swift 6.0.3.
 - **Manifest:** `swift package dump-package` resolves cleanly.
 
 What has **not** been checked: type-checking against SwiftUI, UIKit, and PhotosUI,
 and anything visual. The first Xcode build is the real test.
+
+## Previews
+
+Every screen and the main components carry `#Preview` blocks, so the Xcode canvas
+works as soon as the package opens — no need to build and run to see the design.
+
+| Preview | Where |
+| --- | --- |
+| Analyze | `Screens/AnalyzeScreen.swift` |
+| History — populated / empty | `Screens/HistoryScreen.swift` |
+| About | `Screens/AboutScreen.swift` |
+| Result card | `Theme/PreviewSupport.swift` |
+| Buttons | `Theme/PreviewSupport.swift` |
+| Confidence thresholds | `Theme/PreviewSupport.swift` |
+| Stat row | `Theme/PreviewSupport.swift` |
+
+Fixtures live in `Theme/PreviewSupport.swift` behind `#if DEBUG`, so none of it
+reaches a release build. The fixture image URL deliberately does not resolve, so
+result cards render their "image no longer available" placeholder in the canvas.

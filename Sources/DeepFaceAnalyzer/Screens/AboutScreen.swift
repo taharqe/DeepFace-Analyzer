@@ -160,3 +160,10 @@ private struct LimitationRow: View {
         }
     }
 }
+
+#if DEBUG
+#Preview("About") {
+    AboutScreen()
+        .preferredColorScheme(.dark)
+}
+#endif

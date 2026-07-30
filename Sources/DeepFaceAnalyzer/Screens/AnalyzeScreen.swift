@@ -266,3 +266,11 @@ public struct AnalyzeScreen: View {
         }
     }
 }
+
+#if DEBUG
+#Preview("Analyze") {
+    AnalyzeScreen()
+        .environment(HistoryStore())
+        .preferredColorScheme(.dark)
+}
+#endif

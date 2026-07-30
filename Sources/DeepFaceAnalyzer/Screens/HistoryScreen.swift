@@ -106,3 +106,17 @@ public struct HistoryScreen: View {
         }
     }
 }
+
+#if DEBUG
+#Preview("History — populated") {
+    HistoryScreen()
+        .environment(PreviewData.populatedHistory)
+        .preferredColorScheme(.dark)
+}
+
+#Preview("History — empty") {
+    HistoryScreen()
+        .environment(HistoryStore())
+        .preferredColorScheme(.dark)
+}
+#endif
