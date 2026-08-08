@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- Both strings are required. iOS terminates the app on first access if the
+	     matching key is missing, rather than showing a permission prompt. -->
+	<key>NSCameraUsageDescription</key>
+	<string>DeepFace Analyzer needs camera access so you can capture a photo to analyze.</string>
+
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>DeepFace Analyzer needs access to your photos so you can choose an image to analyze.</string>
+
+	<!-- Leave empty to run in demo mode. Set to your DeepFace inference endpoint
+	     to send real requests. -->
+	<key>ANALYZER_URL</key>
+	<string></string>
+
+	<!-- The palette is built for a dark world; forcing the interface style keeps
+	     the system from handing the app a light appearance it has no design for. -->
+	<key>UIUserInterfaceStyle</key>
+	<string>Dark</string>
+</dict>
+</plist>
